@@ -3,7 +3,7 @@
 client_id = "43a2c0fd6c47a5987389f12b4da0c823"
 name = "bulk-sms"
 handle = "bulk-sms-6"
-application_url = "https://ebook-pets-buy-controversy.trycloudflare.com"
+application_url = "https://inquiry-facing-workflow-tank.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-07"
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://ebook-pets-buy-controversy.trycloudflare.com/auth/callback", "https://ebook-pets-buy-controversy.trycloudflare.com/auth/shopify/callback", "https://ebook-pets-buy-controversy.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://inquiry-facing-workflow-tank.trycloudflare.com/auth/callback", "https://inquiry-facing-workflow-tank.trycloudflare.com/auth/shopify/callback", "https://inquiry-facing-workflow-tank.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

@@ -3,181 +3,464 @@ import {
   Page,
   Layout,
   Card,
-  Text,
   Button,
-  BlockStack,
-  Box,
   TextField,
-  Modal,
+  InlineGrid,
+  BlockStack,
+  Select,
+  Text,
+  Badge,
+  Banner,
+  Spinner,
 } from "@shopify/polaris";
 
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const blocks = [
-  { id: "header", label: "Header", default: "Welcome to our newsletter" },
-  { id: "text", label: "Text", default: "This is some sample email text." },
-  { id: "image", label: "Image", default: "https://via.placeholder.com/600x200" },
-  { id: "button", label: "Button", default: "Click Here" },
-];
+function SortableItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
 
-const defaultTemplate = [
-  { id: "header", label: "Header", content: "Welcome to Kamal Basyal's Newsletter" },
-  { id: "image", label: "Image", content: "https://via.placeholder.com/600x200" },
-  { id: "text", label: "Text", content: "This is a default email body text." },
-  { id: "button", label: "Button", content: "Get Started" },
-];
-
-export default function Templates() {
-  const [template, setTemplate] = useState(defaultTemplate);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-
-  const handleDragStart = (event, block) => {
-    event.dataTransfer.setData("block", JSON.stringify(block));
-  };
-
-  const handleDropEvent = (event) => {
-    event.preventDefault();
-    const block = JSON.parse(event.dataTransfer.getData("block"));
-    setTemplate((prev) => [
-      ...prev,
-      { ...block, content: block.default },
-    ]);
-  };
-
-
-  const handleEdit = (index, newValue) => {
-    const updated = [...template];
-    updated[index].content = newValue;
-    setTemplate(updated);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    padding: "12px",
+    border: isDragging ? "2px dashed #5c6ac4" : "1px dashed #d1d5db",
+    borderRadius: "10px",
+    background: "#ffffff",
+    boxShadow: isDragging
+      ? "0 6px 16px rgba(0,0,0,0.10)"
+      : "0 2px 8px rgba(0,0,0,0.06)",
+    cursor: "grab",
   };
 
   return (
-    <Page title="Email Template Builder">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
+export default function Templates() {
+  const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [title, setTitle] = useState("Your Product Title");
+  const [body, setBody] = useState(
+    "This is your amazing product. Customize this text to advertise."
+  );
+  const [image, setImage] = useState();
+  const [buttonLabel, setButtonLabel] = useState("Shop Now");
+  const [buttonColor, setButtonColor] = useState("#008060");
+  const [alignment, setAlignment] = useState("center");
+  const [textColor, setTextColor] = useState("#212b36");
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [contentMaxWidth, setContentMaxWidth] = useState("600");
+
+  const [blocks, setBlocks] = useState([
+    { id: "title", type: "title" },
+    { id: "image", type: "image" },
+    { id: "body", type: "body" },
+    { id: "button", type: "button" },
+  ]);
+
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState("New Product Alert!");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  const templates = [
+    {
+      id: 1,
+      name: "Simple Promo",
+      frameStyle: {
+        border: "1px solid #e1e3e5",
+        padding: 24,
+        borderRadius: 14,
+        background: backgroundColor,
+        textAlign: alignment,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+      },
+      headingStyle: { fontSize: 26, fontWeight: 700 },
+      bodyStyle: { fontSize: 16, lineHeight: 1.6 },
+    },
+    {
+      id: 2,
+      name: "Bold Highlight",
+      frameStyle: {
+        border: "2px solid #111827",
+        padding: 28,
+        borderRadius: 16,
+        background: backgroundColor,
+        textAlign: alignment,
+        boxShadow: "0 4px 14px rgba(0,0,0,0.10)",
+      },
+      headingStyle: { fontSize: 28, fontWeight: 800, letterSpacing: 0.2 },
+      bodyStyle: { fontSize: 16, lineHeight: 1.7 },
+    },
+  ];
+  const activeTemplate =
+    templates.find((t) => t.id === selectedTemplate) ?? templates[0];
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = blocks.findIndex((b) => b.id === active.id);
+    const newIndex = blocks.findIndex((b) => b.id === over.id);
+    setBlocks((items) => arrayMove(items, oldIndex, newIndex));
+  };
+
+  const renderBlock = (block) => {
+    switch (block.type) {
+      case "title":
+        return (
+          <h2
+            style={{
+              margin: 0,
+              marginBottom: 12,
+              color: textColor,
+              ...activeTemplate.headingStyle,
+            }}
+          >
+            {title}
+          </h2>
+        );
+      case "image":
+        return (
+          <img
+            src={image}
+            alt="template"
+            style={{
+              width: "100%",
+              borderRadius: 10,
+              marginBottom: 12,
+              display: "block",
+            }}
+          />
+        );
+      case "body":
+        return (
+          <p
+            style={{
+              margin: 0,
+              marginBottom: 12,
+              color: textColor,
+              ...activeTemplate.bodyStyle,
+            }}
+          >
+            {body}
+          </p>
+        );
+      case "button":
+        return (
+          <div style={{ display: "flex", justifyContent: alignment }}>
+            <button
+              style={{
+                border: 0,
+                padding: "12px 18px",
+                borderRadius: 10,
+                background: buttonColor,
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {buttonLabel}
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const generateHTML = () => {
+    return `
+      <div style="max-width:${contentMaxWidth}px;margin:auto;padding:20px;background:${backgroundColor};text-align:${alignment};font-family:sans-serif;">
+        ${blocks
+          .map((block) => {
+            switch (block.type) {
+              case "title":
+                return `<h2 style="color:${textColor};">${title}</h2>`;
+              case "image":
+                return `<img src="${image}" style="width:100%;border-radius:8px;margin:12px 0;" />`;
+              case "body":
+                return `<p style="color:${textColor};line-height:1.6;">${body}</p>`;
+              case "button":
+                return `<a href="#" style="display:inline-block;background:${buttonColor};color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600;">${buttonLabel}</a>`;
+              default:
+                return "";
+            }
+          })
+          .join("")}
+      </div>
+    `;
+  };
+
+  const handleSend = async () => {
+    setLoading(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to, subject, html: generateHTML() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus({ success: true, message: "Email sent successfully" });
+      } else {
+        setStatus({ success: false, message: data.error || "Failed to send" });
+      }
+    } catch (err) {
+      setStatus({ success: false, message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const previewOuterStyle = {
+    display: "flex",
+    justifyContent: "center",
+    background: "#f6f7f8",
+    padding: 16,
+    borderRadius: 12,
+  };
+
+  return (
+    <Page title=" Customize  Email Templates">
       <Layout>
-        <Layout.Section oneThird>
-          <Card title="Available Blocks" sectioned>
-            <BlockStack gap="300">
-              {blocks.map((block) => (
-                <Box
-                  key={block.id}
-                  padding="300"
-                  background="bg-surface-secondary"
-                  border="base"
-                  borderRadius="200"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, block)}
-                  style={{ cursor: "grab" }}
-                >
-                  <Text as="span" fontWeight="semibold">
-                    {block.label}
-                  </Text>
-                </Box>
+        <Layout.Section>
+          <Card title="Choose a Template" sectioned>
+            <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+              {templates.map((tpl) => (
+                <Card key={tpl.id} sectioned>
+                  <BlockStack gap="200">
+                    <Text as="h3" variant="headingMd">
+                      {tpl.name}{" "}
+                      {selectedTemplate === tpl.id && (
+                        <Badge tone="success">Selected</Badge>
+                      )}
+                    </Text>
+                    <div style={previewOuterStyle}>
+                      <div style={{ width: "100%", maxWidth: 360 }}>
+                        <div style={{ ...tpl.frameStyle }}>
+                          <h4 style={{ marginTop: 0 }}>Preview</h4>
+                          <div
+                            style={{
+                              opacity: 0.7,
+                              fontSize: 13,
+                              marginBottom: 8,
+                            }}
+                          >
+                            (Uses your content/colors)
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 8,
+                            }}
+                          >
+                            <div
+                              style={{ ...tpl.headingStyle, color: textColor }}
+                            >
+                              {title}
+                            </div>
+                            <div
+                              style={{
+                                height: 120,
+                                background: "#e5e7eb",
+                                borderRadius: 8,
+                              }}
+                            />
+                            <div
+                              style={{ ...tpl.bodyStyle, color: textColor }}
+                            >
+                              Sample body…
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => setSelectedTemplate(tpl.id)}
+                      primary={selectedTemplate === tpl.id}
+                      fullWidth
+                    >
+                      {selectedTemplate === tpl.id ? "Selected" : "Select"}
+                    </Button>
+                  </BlockStack>
+                </Card>
               ))}
-            </BlockStack>
+            </InlineGrid>
           </Card>
         </Layout.Section>
 
         <Layout.Section>
-          <Card
-            title="Your Email Template"
-            sectioned
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDropEvent}
-          >
-            {template.length === 0 ? (
-              <Text color="subdued">Drag blocks here to build your email</Text>
-            ) : (
-              <BlockStack gap="300">
-                {template.map((block, index) => (
-                  <Card key={index} sectioned>
-                    {block.id === "image" ? (
-                      <>
-                        <img
-                          src={block.content}
-                          alt="template-img"
-                          style={{ maxWidth: "100%", borderRadius: "8px" }}
-                        />
-                        <TextField
-                          label="Image URL"
-                          value={block.content}
-                          onChange={(val) => handleEdit(index, val)}
-                        />
-                      </>
-                    ) : (
-                      <TextField
-                        label={block.label}
-                        value={block.content}
-                        onChange={(val) => handleEdit(index, val)}
-                        multiline
-                      />
-                    )}
-                  </Card>
-                ))}
-              </BlockStack>
-            )}
+          <Card title="Live Preview & Arrange Blocks" sectioned>
+            <div style={previewOuterStyle}>
+              <div style={{ width: "100%", maxWidth: Number(contentMaxWidth) }}>
+                <div style={{ ...activeTemplate.frameStyle }}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={blocks.map((b) => b.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <BlockStack gap="300">
+                        {blocks.map((block) => (
+                          <SortableItem key={block.id} id={block.id}>
+                            {renderBlock(block)}
+                          </SortableItem>
+                        ))}
+                      </BlockStack>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              </div>
+            </div>
           </Card>
+        </Layout.Section>
+        <Layout.Section>
+          <Card title="Customize Content & Styles" sectioned>
+            <InlineGrid columns={{ xs: 1, sm: 2, md: 3 }} gap="400">
+              <BlockStack gap="300">
+                <Text as="h4" variant="headingSm">
+                  Content
+                </Text>
+                <TextField label="Title" value={title} onChange={setTitle} />
+                <TextField
+                  label="Body"
+                  value={body}
+                  onChange={setBody}
+                  multiline={4}
+                />
+                <TextField
+                  label="Image URL"
+                  value={image}
+                  onChange={setImage}
+                />
+                <TextField
+                  label="Button Label"
+                  value={buttonLabel}
+                  onChange={setButtonLabel}
+                />
+              </BlockStack>
 
-          {template.length > 0 && (
-            <Box padding="400" gap="300" display="flex">
-              <Button onClick={() => console.log("Final Template:", template)}>
-                Save Template
+              <BlockStack gap="300">
+                <Text as="h4" variant="headingSm">
+                  Colors
+                </Text>
+                <TextField
+                  label="Text Color"
+                  type="color"
+                  value={textColor}
+                  onChange={setTextColor}
+                />
+                <TextField
+                  label="Background Color"
+                  type="color"
+                  value={backgroundColor}
+                  onChange={setBackgroundColor}
+                />
+                <TextField
+                  label="Button Color"
+                  type="color"
+                  value={buttonColor}
+                  onChange={setButtonColor}
+                />
+              </BlockStack>
+
+              <BlockStack gap="300">
+                <Text as="h4" variant="headingSm">
+                  Layout
+                </Text>
+                <Select
+                  label="Text Alignment"
+                  options={[
+                    { label: "Left", value: "left" },
+                    { label: "Center", value: "center" },
+                    { label: "Right", value: "right" },
+                  ]}
+                  onChange={setAlignment}
+                  value={alignment}
+                />
+                <TextField
+                  label="Max Content Width (px)"
+                  type="number"
+                  value={contentMaxWidth}
+                  onChange={setContentMaxWidth}
+                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Button
+                    onClick={() =>
+                      setBlocks([
+                        { id: "title", type: "title" },
+                        { id: "image", type: "image" },
+                        { id: "body", type: "body" },
+                        { id: "button", type: "button" },
+                      ])
+                    }
+                  >
+                    Reset Order
+                  </Button>
+                  <Button
+                    tone="critical"
+                    onClick={() =>
+                      setBlocks((prev) =>
+                        prev.filter((b) => b.id !== "image")
+                      )
+                    }
+                  >
+                    Remove Image
+                  </Button>
+                </div>
+              </BlockStack>
+            </InlineGrid>
+          </Card>
+        </Layout.Section>
+        <Layout.Section>
+          <Card title="Send Email" sectioned>
+            <BlockStack gap="300">
+              <TextField
+                label="Recipient Email"
+                type="email"
+                value={to}
+                onChange={setTo}
+              />
+              <TextField
+                label="Subject"
+                value={subject}
+                onChange={setSubject}
+              />
+              <Button primary onClick={handleSend} disabled={loading}>
+                {loading ? <Spinner size="small" /> : "Send Email"}
               </Button>
-              <Button variant="primary" onClick={() => setPreviewOpen(true)}>
-                Preview
-              </Button>
-            </Box>
-          )}
+              {status && (
+                <Banner
+                  tone={status.success ? "success" : "critical"}
+                  title={status.message}
+                />
+              )}
+            </BlockStack>
+          </Card>
         </Layout.Section>
       </Layout>
-
-      <Modal
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        title="Email Preview"
-        large
-      >
-        <Modal.Section>
-          <Box padding="400" background="bg-surface-secondary">
-            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              {template.map((block, index) => {
-                if (block.id === "header") {
-                  return (
-                    <h2 key={index} style={{ textAlign: "center", margin: "16px 0" }}>
-                      {block.content}
-                    </h2>
-                  );
-                }
-                if (block.id === "text") {
-                  return (
-                    <p key={index} style={{ fontSize: "16px", lineHeight: "22px" }}>
-                      {block.content}
-                    </p>
-                  );
-                }
-                if (block.id === "image") {
-                  return (
-                    <div key={index} style={{ textAlign: "center", margin: "16px 0" }}>
-                      <img
-                        src={block.content}
-                        alt="email-img"
-                        style={{ maxWidth: "100%", borderRadius: "8px" }}
-                      />
-                    </div>
-                  );
-                }
-                if (block.id === "button") {
-                  return (
-                    <div key={index} style={{ textAlign: "center", margin: "24px 0" }}>
-                      <Button primary>{block.content}</Button>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          </Box>
-        </Modal.Section>
-      </Modal>
     </Page>
   );
 }

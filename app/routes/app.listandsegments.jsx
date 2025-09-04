@@ -1,32 +1,51 @@
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, Form } from "@remix-run/react";
 import { useState } from "react";
+import prisma from "../db.server";
 import {
   Page,
   Card,
-  ResourceList,
-  ResourceItem,
-  Text,
   TextField,
   Select,
   Button,
+  BlockStack,
   InlineStack,
-  Tag,
+  ResourceList,
+  ResourceItem,
   Badge,
+  Text,
 } from "@shopify/polaris";
 
+
+export async function loader() {
+  const items = await prisma.list.findMany({
+    orderBy: { id: "desc" }, 
+  });
+  return json(items);
+}
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const name = formData.get("name");
+  const type = formData.get("type");
+  const emails = formData.getAll("emails"); 
+  await prisma.list.create({
+    data: {
+      name,
+      type,
+      emails,
+    },
+  });
+
+  return redirect("/lists");
+}
 export default function ListsAndSegmentsPage() {
-  const [selectedItems, setSelectedItems] = useState([]);
+  const items = useLoaderData();
+  const [showForm, setShowForm] = useState(false);
+  const [emails, setEmails] = useState([""]);
   const [searchValue, setSearchValue] = useState("");
   const [filterType, setFilterType] = useState("all");
-
-  const items = [
-    { id: "1", name: "New Subscribers", type: "Segment", members: 4, created: "Dec 15, 2020, 11:52 am" },
-    { id: "2", name: "Preview List", type: "List", members: 5, created: "Dec 15, 2020, 11:52 am" },
-    { id: "3", name: "Engaged (3 Months)", type: "Segment", members: 0, created: "Dec 15, 2020, 11:52 am" },
-    { id: "4", name: "Newsletter", type: "List", members: 6, created: "Dec 15, 2020, 11:52 am" },
-    { id: "5", name: "Unengaged (1 Year)", type: "Segment", members: 0, created: "Dec 15, 2020, 11:52 am" },
-    { id: "6", name: "Unengaged (3 Months)", type: "Segment", members: 0, created: "Dec 15, 2020, 11:52 am" },
-    { id: "7", name: "Churn Risks", type: "Segment", members: 0, created: "Dec 15, 2020, 11:52 am" },
-  ];
+  const [listName, setListName]= useState();
 
   const filterOptions = [
     { label: "All types", value: "all" },
@@ -40,59 +59,120 @@ export default function ListsAndSegmentsPage() {
       item.name.toLowerCase().includes(searchValue.toLowerCase())
   );
 
+  const handleEmailChange = (value, index) => {
+    const updated = [...emails];
+    updated[index] = value;
+    setEmails(updated);
+  };
+
+  const addEmailField = () => setEmails([...emails, ""]);
+  const removeEmailField = (index) => {
+    const updated = [...emails];
+    updated.splice(index, 1);
+    setEmails(updated);
+  };
+
   return (
     <Page
       title="Lists & Segments"
-      primaryAction={{ content: "Create List / Segment" }}
+      primaryAction={{
+        content: showForm ? "Cancel" : "Create List / Segment",
+        onAction: () => setShowForm((prev) => !prev),
+      }}
       secondaryActions={[{ content: "Inactive Segments" }]}
     >
       <Card>
-        <InlineStack gap="400" align="start" blockAlign="center" wrap={false}>
-          <TextField
-            placeholder="Search lists & segments"
-            value={searchValue}
-            onChange={setSearchValue}
-            autoComplete="off"
-          />
-          <TextField placeholder="Select tags..." disabled />
-          <Select
-            options={filterOptions}
-            value={filterType}
-            onChange={setFilterType}
-          />
-        </InlineStack>
+        <BlockStack gap="400">
+       
+          {showForm && (
+            <Card sectioned>
+              <Form method="post">
+                <BlockStack gap="300">
+                  <TextField
+                    label="List/Segment Name"
+                    name="name"
+                    value={listName}
+                    onChange={setListName}
+                    autoComplete="off"
+                  />
 
-        <ResourceList
-          resourceName={{ singular: "list", plural: "lists" }}
-          items={filteredItems}
-          selectable
-          selectedItems={selectedItems}
-          onSelectionChange={setSelectedItems}
-          renderItem={(item) => {
-            const { id, name, type, members, created } = item;
-            return (
-              <ResourceItem id={id}>
-                <InlineStack align="space-between" blockAlign="center">
-                  <div>
-                    <Text variant="bodyMd" fontWeight="bold" as="h3">
-                      {name} <Badge>{type}</Badge>
-                    </Text>
-                    <Text as="span" tone="subdued">
-                      View definition
-                    </Text>
-                  </div>
-                  <div style={{ minWidth: "200px", textAlign: "right" }}>
-                    <Text as="span">{members} Members</Text>
-                    <br />
-                    <Text as="span" tone="subdued">
-                      {created}
-                    </Text>
-                  </div>
-                </InlineStack>
-              </ResourceItem>
-            );
-          }}
-        />
+                  <Select
+                    label="Type"
+                    options={[
+                      { label: "List", value: "List" },
+                      { label: "Segment", value: "Segment" },
+                    ]}
+                    name="type"
+                    defaultValue="List"
+                  />
+                  <BlockStack gap="200">
+                    {emails.map((email, index) => (
+                      <InlineStack key={index} gap="100" align="start">
+                        <TextField
+                          label={`Email ${index + 1}`}
+                          value={email}
+                          onChange={(value) => handleEmailChange(value, index)}
+                          type="email"
+                        />
+                        {emails.length > 1 && (
+                          <Button destructive onClick={() => removeEmailField(index)}>
+                            Remove
+                          </Button>
+                        )}
+                        <input type="hidden" name="emails" value={email} />
+                      </InlineStack>
+                    ))}
+                    <Button onClick={addEmailField}>Add Email</Button>
+                  </BlockStack>
+
+                  <Button submit primary>Create</Button>
+                </BlockStack>
+              </Form>
+            </Card>
+          )}
+
+          <InlineStack gap="400" align="start" blockAlign="center" wrap={false}>
+            <TextField
+              placeholder="Search lists & segments"
+              value={searchValue}
+              onChange={setSearchValue}
+              autoComplete="off"
+            />
+            <Select
+              options={filterOptions}
+              value={filterType}
+              onChange={setFilterType}
+            />
+          </InlineStack>
+          <ResourceList
+            resourceName={{ singular: "list", plural: "lists" }}
+            items={filteredItems}
+            renderItem={(item) => {
+              const { id, name, type, emails } = item;
+              return (
+                <ResourceItem id={id}>
+                  <InlineStack align="space-between" blockAlign="center">
+                    <div>
+                      <Text variant="bodyMd" fontWeight="bold" as="h3">
+                        {name} <Badge>{type}</Badge>
+                      </Text>
+                      <Text as="span" tone="subdued">
+                        View definition
+                      </Text>
+                    </div>
+                    <div style={{ minWidth: "200px", textAlign: "right" }}>
+                      <Text as="span">{emails.length} Members</Text>
+                      <br />
+                      <Text as="span" tone="subdued">
+                        {new Date().toLocaleDateString()}
+                      </Text>
+                    </div>
+                  </InlineStack>
+                </ResourceItem>
+              );
+            }}
+          />
+        </BlockStack>
       </Card>
     </Page>
   );
