@@ -1,6 +1,5 @@
 import { json } from "@remix-run/node";
 import sgMail from "@sendgrid/mail";
-sgMail.setApiKey("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");
 
 export const loader = async () => {
   return null;
