@@ -27,7 +27,7 @@ export default function App() {
         <Link to="/app/push-notification">Push Notification</Link>
         <Link to="/app/managelist">Manage List</Link>
         <Link to="/app/listandsegments">Lists and Segments</Link>
-        <Link>Image Library</Link>
+        <Link to="/app/invoice">Invoice</Link>
         <Link>Hosted Pages</Link>
         <Link to="/app/templates">Emails Forms</Link>
         <Link>Folders</Link>
