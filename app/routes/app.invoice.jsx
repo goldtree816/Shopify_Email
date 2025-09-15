@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Page, Card, Button, Select, ButtonGroup } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom"; // 👈 add this if using React Router
+import { Page, Card, Tabs, Select, Button } from "@shopify/polaris";
 
 const storeData = {
   name: "My Shopify Store",
@@ -19,7 +18,6 @@ const orderData = {
   total: "$70"
 };
 
-// Function to generate HTML dynamically
 const generateTemplateHtml = (templateId) => {
   if (templateId === "classic") {
     return `
@@ -33,8 +31,8 @@ const generateTemplateHtml = (templateId) => {
         <table>
           <tr><th>Item</th><th>Price</th></tr>
           ${orderData.items
-        .map((item) => `<tr><td>${item.name}</td><td>${item.price}</td></tr>`)
-        .join("")}
+            .map((item) => `<tr><td>${item.name}</td><td>${item.price}</td></tr>`)
+            .join("")}
         </table>
         <p><b>Total: ${orderData.total}</b></p>
       </div>
@@ -52,8 +50,8 @@ const generateTemplateHtml = (templateId) => {
         <p><b>Customer:</b> ${orderData.customer}</p>
         <ul>
           ${orderData.items
-        .map((item) => `<li>${item.name} - ${item.price}</li>`)
-        .join("")}
+            .map((item) => `<li>${item.name} - ${item.price}</li>`)
+            .join("")}
         </ul>
         <h3>Total: ${orderData.total}</h3>
       </div>
@@ -99,69 +97,77 @@ const templates = [
 ];
 
 export default function InvoicePage() {
+  const [tabIndex, setTabIndex] = useState(4);
   const [selected, setSelected] = useState("classic");
   const [customCSS, setCustomCSS] = useState("");
-  const navigate = useNavigate(); // 👈 hook for navigation
 
   const selectedTemplate = templates.find((t) => t.id === selected);
   const generatedHtml = generateTemplateHtml(selected);
 
+  const tabs = [
+    { id: "dashboard", content: "Dashboard", panelID: "dashboard-panel" },
+    { id: "orders", content: "Orders", panelID: "orders-panel" },
+    { id: "settings", content: "Settings", panelID: "settings-panel" },
+    { id: "reports", content: "Reports", panelID: "reports-panel" },
+    { id: "invoice", content: "Invoice", panelID: "invoice-panel" }
+  ];
+
   return (
-    <Page
-      title="Invoice Generator"
-      primaryAction={null}
-    >
-
-
-      <ButtonGroup>
-        <Button onClick={() => navigate("/")}>Dashboard</Button>
-        <Button onClick={() => navigate("/orders")}>Orders</Button>
-        <Button onClick={() => navigate("/settings")}>Settings</Button>
-        <Button onClick={() => navigate("/reports")}>Reports</Button>
-      </ButtonGroup>
-
+    <Page title="Shopify App">
+      <Tabs tabs={tabs} selected={tabIndex} onSelect={setTabIndex} fitted />
 
       <Card sectioned>
-        <Select
-          label="Choose a template"
-          options={templates.map((t) => ({ label: t.name, value: t.id }))}
-          onChange={(val) => setSelected(val)}
-          value={selected}
-        />
-      </Card>
+        {tabIndex === 0 && <p>Welcome to the Dashboard 🚀</p>}
+        {tabIndex === 1 && <p>Here are your Orders 📦</p>}
+        {tabIndex === 2 && <p>Settings ⚙️</p>}
+        {tabIndex === 3 && <p>Reports 📊</p>}
 
-      <Card sectioned>
-        <h3>Live Preview</h3>
-        <div
-          style={{
-            border: "1px solid #ddd",
-            padding: "20px",
-            marginTop: "10px"
-          }}
-          dangerouslySetInnerHTML={{ __html: generatedHtml }}
-        />
-        <style>{selectedTemplate.css + customCSS}</style>
-      </Card>
+        {tabIndex === 4 && (
+          <div>
+            <Card sectioned>
+              <Select
+                label="Choose a template"
+                options={templates.map((t) => ({ label: t.name, value: t.id }))}
+                onChange={(val) => setSelected(val)}
+                value={selected}
+              />
+            </Card>
 
-      <Card sectioned>
-        <h3>Custom CSS</h3>
-        <textarea
-          style={{ width: "100%", minHeight: "100px" }}
-          placeholder="Write your custom CSS here..."
-          value={customCSS}
-          onChange={(e) => setCustomCSS(e.target.value)}
-        />
-      </Card>
+            <Card sectioned>
+              <h3>Live Preview</h3>
+              <div
+                style={{
+                  border: "1px solid #ddd",
+                  padding: "20px",
+                  marginTop: "10px"
+                }}
+                dangerouslySetInnerHTML={{ __html: generatedHtml }}
+              />
+              <style>{selectedTemplate.css + customCSS}</style>
+            </Card>
 
-      <Card sectioned>
-        <Button
-          primary
-          onClick={() =>
-            alert("Send Email with invoice HTML + store info")
-          }
-        >
-          Export / Send Invoice
-        </Button>
+            <Card sectioned>
+              <h3>Custom CSS</h3>
+              <textarea
+                style={{ width: "100%", minHeight: "100px" }}
+                placeholder="Write your custom CSS here..."
+                value={customCSS}
+                onChange={(e) => setCustomCSS(e.target.value)}
+              />
+            </Card>
+
+            <Card sectioned>
+              <Button
+                primary
+                onClick={() =>
+                  alert("Send Email with invoice HTML + store info")
+                }
+              >
+                Export / Send Invoice
+              </Button>
+            </Card>
+          </div>
+        )}
       </Card>
     </Page>
   );
