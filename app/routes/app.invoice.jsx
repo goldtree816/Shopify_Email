@@ -1,17 +1,22 @@
 import { useState } from "react";
 import {
   Page,
+  Layout,
   Card,
   Tabs,
   Select,
   Button,
-  TextField,
   DataTable,
-  Badge
+  Badge,
+  FormLayout,
+  TextField,
 } from "@shopify/polaris";
+
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   CartesianGrid,
   Legend,
@@ -102,7 +107,6 @@ const generateTemplateHtml = (templateId) => {
   return "";
 };
 
-// Templates
 const templates = [
   {
     id: "classic",
@@ -139,7 +143,7 @@ const templates = [
 ];
 
 export default function InvoicePage() {
-  const [tabIndex, setTabIndex] = useState(0); // Default to Dashboard
+  const [tabIndex, setTabIndex] = useState(0);
   const [selected, setSelected] = useState("classic");
   const [customCSS, setCustomCSS] = useState("");
 
@@ -163,7 +167,6 @@ export default function InvoicePage() {
           <div>
             <p style={{ marginBottom: "24px" }}>Welcome to your Invoicing Dashboard 🚀</p>
 
-            {/* Stats in cards */}
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
               <Card title="Total Invoices" sectioned>
                 <h1 style={{ fontSize: "32px", margin: 0 }}>152</h1>
@@ -180,10 +183,8 @@ export default function InvoicePage() {
                 <p style={{ color: "#6b7280" }}>Revenue received</p>
               </Card>
             </div>
-
-            {/* Charts Section */}
             <Card title="Monthly Revenue" sectioned>
-              <div style={{ width: "100%", height: 350 }}> {/* Increased height */}
+              <div style={{ width: "100%", height: 350 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -198,7 +199,7 @@ export default function InvoicePage() {
             </Card>
 
             <Card title="Invoice Status Breakdown" sectioned>
-              <div style={{ width: "100%", height: 350 }}> {/* Increased height */}
+              <div style={{ width: "100%", height: 350 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -206,7 +207,7 @@ export default function InvoicePage() {
                       dataKey="value"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120} // bigger pie
+                      outerRadius={120}
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
                       {invoiceStatusData.map((entry, index) => (
@@ -220,8 +221,6 @@ export default function InvoicePage() {
               </div>
             </Card>
 
-
-            {/* Other Insights */}
             <div style={{ marginTop: "24px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
               <Card title="Top Customer" sectioned>
                 <p><b>Jane Smith</b></p>
@@ -242,47 +241,187 @@ export default function InvoicePage() {
             </div>
           </div>
         )}
-
-        {/* Orders */}
         {tabIndex === 1 && (
           <div>
             <h2>Orders 📦</h2>
             <DataTable
-              columnContentTypes={["text", "text", "numeric"]}
-              headings={["Customer", "Status", "Total"]}
+              columnContentTypes={["text", "text", "text", "numeric"]}
+              headings={["Customer", "Item", "Status", "Total"]}
               rows={[
-                ["John Doe", <Badge status="success">Paid</Badge>, "$70"],
-                ["Jane Smith", <Badge status="attention">Pending</Badge>, "$120"],
-                ["Alex Lee", <Badge status="warning">Overdue</Badge>, "$55"]
+                ["John Doe", "T-shirt", <Badge status="success">Paid</Badge>, "$70"],
+                ["Jane Smith", "Shoes", <Badge status="attention">Pending</Badge>, "$120"],
+                ["Alex Lee", "Cap", <Badge status="critical">Overdue</Badge>, "$55"],
+                ["Michael Chen", "Jacket", <Badge status="success">Paid</Badge>, "$150"],
+                ["Sophia Lee", "Watch", <Badge status="attention">Pending</Badge>, "$220"],
+                ["David Kim", "Bag", <Badge status="critical">Overdue</Badge>, "$90"],
+                ["Emily Brown", "Sunglasses", <Badge status="success">Paid</Badge>, "$80"],
               ]}
             />
           </div>
         )}
 
-        {/* Settings */}
+
+
+
         {tabIndex === 2 && (
           <div>
-            <h2>Settings ⚙️</h2>
-            <TextField label="Store Name" value={storeData.name} onChange={() => { }} />
-            <TextField label="Email" value={storeData.email} onChange={() => { }} />
-            <TextField label="Phone" value={storeData.phone} onChange={() => { }} />
-            <p style={{ marginTop: "10px" }}>💾 Save button would go here</p>
+            <p
+              style={{
+                marginBottom: "24px",
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#374151"
+              }}
+            >
+              Manage your store preferences and account details ⚙️
+            </p>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              <Card title="Store Information 🏪" sectioned>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <TextField
+                    label="Store Name"
+                    value={storeData.name}
+                    onChange={() => { }}
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Email"
+                    type="email"
+                    value={storeData.email}
+                    onChange={() => { }}
+                    autoComplete="email"
+                  />
+                  <TextField
+                    label="Phone"
+                    type="tel"
+                    value={storeData.phone}
+                    onChange={() => { }}
+                    autoComplete="tel"
+                  />
+                </div>
+              </Card>
+
+              <Card title="Preferences" sectioned>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <Select
+                    label="Default Currency"
+                    options={[
+                      { label: "USD ($)", value: "usd" },
+                      { label: "EUR (€)", value: "eur" },
+                      { label: "GBP (£)", value: "gbp" },
+                    ]}
+                    value="usd"
+                    onChange={() => { }}
+                  />
+                  <Select
+                    label="Default Language"
+                    options={[
+                      { label: "English", value: "en" },
+                      { label: "French", value: "fr" },
+                      { label: "German", value: "de" },
+                    ]}
+                    value="en"
+                    onChange={() => { }}
+                  />
+                </div>
+              </Card>
+            </div>
+
+            <div style={{ marginTop: "24px" }}>
+              <Card title="Branding " sectioned>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                  <div
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      background: "#f9fafb",
+                      fontSize: "12px",
+                      color: "#6b7280"
+                    }}
+                  >
+                    Logo
+                  </div>
+                  <Button>Upload Logo</Button>
+                </div>
+                <p style={{ marginTop: "8px", fontSize: "13px", color: "#6b7280" }}>
+                  Recommended size: 200x200px (PNG or JPG)
+                </p>
+              </Card>
+            </div>
+
+            <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
+              <Button primary size="large">💾 Save Settings</Button>
+            </div>
           </div>
         )}
-
-        {/* Reports */}
         {tabIndex === 3 && (
-          <div>
-            <h2>Reports 📊</h2>
-            <ul>
-              <li>Revenue This Month: <b>$3,200</b></li>
-              <li>Outstanding Payments: <b>$450</b></li>
-              <li>Top Customer: <b>Jane Smith</b></li>
-            </ul>
+          <div className="p-6 space-y-6">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              Reports <span role="img" aria-label="chart">📊</span>
+            </h2>
+            <p className="text-gray-600">Here’s a quick snapshot of your business performance this month.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card sectioned>
+                <h3 className="text-gray-500">Revenue This Month</h3>
+                <p className="text-2xl font-bold text-green-600">$3,200</p>
+              </Card>
+
+              <Card sectioned>
+                <h3 className="text-gray-500">Outstanding Payments</h3>
+                <p className="text-2xl font-bold text-red-500">$450</p>
+              </Card>
+
+              <Card sectioned>
+                <h3 className="text-gray-500">Top Customer</h3>
+                <p className="text-2xl font-bold">Jane Smith</p>
+              </Card>
+              <Card>
+                <h3 className="text-gray-500">Invoices Sent</h3>
+                <p className="text-2xl font-bold">58</p>
+
+              </Card>
+              <Card>
+                <h3 className="text-gray-500">Avg. Invoice Value</h3>
+                <p className="text-2xl font-bold">$210</p>
+
+              </Card>
+              <Card>
+                <h3 className="text-gray-500">Growth Rate</h3>
+                <p className="text-2xl font-bold text-blue-600">+12%</p>
+              </Card>
+            </div>
+
+            <div className="bg-white shadow-md rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Revenue Trend (Last 6 Months)</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={[
+                    { month: "Apr", revenue: 1100 },
+                    { month: "May", revenue: 1500 },
+                    { month: "Jun", revenue: 1800 },
+                    { month: "Jul", revenue: 2500 },
+                    { month: "Aug", revenue: 3200 },
+                    { month: "Sep", revenue: 3400 },
+                  ]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
-        {/* Invoice */}
+
         {tabIndex === 4 && (
           <div>
             <Card sectioned>
@@ -330,6 +469,6 @@ export default function InvoicePage() {
           </div>
         )}
       </Card>
-    </Page>
+    </Page >
   );
 }
