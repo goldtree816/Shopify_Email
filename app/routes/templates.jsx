@@ -15,7 +15,7 @@ export const action = async ({ request }) => {
     }
 
     await sgMail.send({
-      to,
+      to:"kamalbasyal987@gmail.com",
       from: "kamalbasyal987@gmail.com",
       subject,
       html,
