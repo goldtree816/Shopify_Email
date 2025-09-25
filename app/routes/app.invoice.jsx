@@ -10,6 +10,7 @@ import {
   Badge,
   FormLayout,
   TextField,
+  Modal,
 } from "@shopify/polaris";
 
 import {
@@ -46,7 +47,6 @@ const invoiceStatusData = [
 
 const COLORS = ["#16a34a", "#facc15", "#ef4444"];
 
-// Demo Store + Order Data
 const storeData = {
   name: "My Shopify Store",
   address: "123 Market Street",
@@ -63,8 +63,6 @@ const orderData = {
   ],
   total: "$70"
 };
-
-// Generate Invoice HTML
 const generateTemplateHtml = (templateId) => {
   if (templateId === "classic") {
     return `
@@ -142,12 +140,8 @@ const templates = [
     `
   }
 ];
-
-function InvoiceItems() {
-  const [items, setItems] = useState([
-    { item: "Tree candle", description: "Tree-shaped candle - set of 3", quantity: 1, price: 8.99, amount: 8.99 },
-    { item: "Bubble candle", description: "Rose bubble candle", quantity: 1, price: 4.8, amount: 4.8 },
-  ]);
+function InvoiceItems({ onItemsChange }) {
+  const [items, setItems] = useState([]); 
 
   const handleChange = (index, field, value) => {
     const newItems = [...items];
@@ -155,19 +149,22 @@ function InvoiceItems() {
     newItems[index][field] = value;
     newItems[index].amount = newItems[index].quantity * newItems[index].price;
     setItems(newItems);
+    onItemsChange(newItems);
   };
 
-  const addRow = () => setItems([...items, { item: "", description: "", quantity: 1, price: 0, amount: 0 }]);
-  const removeRow = (index) => setItems(items.filter((_, i) => i !== index));
+  const addRow = () =>
+    setItems([
+      ...items,
+      { item: "", description: "", quantity: 1, price: 0, amount: 0 },
+    ]);
 
-  const subtotal = items.reduce((acc, item) => acc + item.amount, 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const removeRow = (index) =>
+    setItems(items.filter((_, i) => i !== index));
 
   return (
     <Card title="Invoice Items" sectioned>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead style={{ backgroundColor: "#3b82f6", color: "white" }}> {/* Blue background */}
+        <thead style={{ backgroundColor: "#3b82f6", color: "white" }}>
           <tr>
             <th style={{ padding: "8px" }}>Item</th>
             <th style={{ padding: "8px" }}>Description</th>
@@ -180,52 +177,89 @@ function InvoiceItems() {
         <tbody>
           {items.map((item, index) => (
             <tr key={index}>
-              <td><input type="text" value={item.item} onChange={(e) => handleChange(index, "item", e.target.value)} /></td>
-              <td><input type="text" value={item.description} onChange={(e) => handleChange(index, "description", e.target.value)} /></td>
-              <td><input type="number" value={item.quantity} onChange={(e) => handleChange(index, "quantity", e.target.value)} /></td>
-              <td><input type="number" value={item.price} step="0.01" onChange={(e) => handleChange(index, "price", e.target.value)} /></td>
+              <td>
+                <input
+                  type="text"
+                  value={item.item}
+                  onChange={(e) =>
+                    handleChange(index, "item", e.target.value)
+                  }
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  value={item.description}
+                  onChange={(e) =>
+                    handleChange(index, "description", e.target.value)
+                  }
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleChange(index, "quantity", e.target.value)
+                  }
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  value={item.price}
+                  step="0.01"
+                  onChange={(e) =>
+                    handleChange(index, "price", e.target.value)
+                  }
+                />
+              </td>
               <td>${item.amount.toFixed(2)}</td>
-              <td><Button plain onClick={() => removeRow(index)}>x</Button></td>
+              <td>
+                <Button plain onClick={() => removeRow(index)}>
+                  x
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <Button plain onClick={addRow} style={{ marginTop: "8px" }}>➕ Add More Items</Button>
-
-      {/* Totals */}
-      <div style={{ display: "flex", gap: "24px", marginTop: "24px", flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: "200px" }}>
-          <Card title="Note" sectioned>
-            <p>Enter any notes or special instructions here.</p>
-          </Card>
-        </div>
-        <div style={{ flex: 1, minWidth: "200px" }}>
-          <Card title="Totals" sectioned>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal:</span><span>${subtotal.toFixed(2)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>Tax (10%):</span><span>${tax.toFixed(2)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", marginTop: "8px" }}><span>Total:</span><span>${total.toFixed(2)}</span></div>
-          </Card>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "16px", marginTop: "16px", flexWrap: "wrap" }}>
-        <Button primary onClick={() => console.log("Send Email clicked")}>Send Email</Button>
-        <Button onClick={() => console.log("Print clicked")}>Print</Button>
-        <Button destructive onClick={() => console.log("Download PDF clicked")}>Download PDF</Button>
-      </div>
+      <Button plain onClick={addRow} style={{ marginTop: "8px" }}>
+        ➕ Add More Items
+      </Button>
     </Card>
   );
 }
 
+
 export default function InvoicePage() {
+
   const [tabIndex, setTabIndex] = useState(0);
-  const [selected, setSelected] = useState("classic");
-  const [customCSS, setCustomCSS] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [items, setItems] = useState([]);
 
-  const selectedTemplate = templates.find((t) => t.id === selected);
-  const generatedHtml = generateTemplateHtml(selected);
+  
+  const [invoiceNo, setInvoiceNo] = useState("PF-LMKACMSPKS");
+  const [invoiceDate, setInvoiceDate] = useState("2023-01-20");
+  const [dueDate, setDueDate] = useState("2023-01-20");
+  const [currency, setCurrency] = useState("usd");
 
+
+  const [fromName, setFromName] = useState("");
+  const [fromEmail, setFromEmail] = useState("");
+  const [fromCity, setFromCity] = useState("");
+  const [fromZip, setFromZip] = useState("");
+
+
+  const [toName, setToName] = useState("");
+  const [toEmail, setToEmail] = useState("");
+  const [toCity, setToCity] = useState("");
+  const [toZip, setToZip] = useState("");
+
+  const subtotal = items.reduce((acc, item) => acc + item.amount, 0);
+  const tax = subtotal * 0.1;
+  const total = subtotal + tax;
   const tabs = [
     { id: "dashboard", content: "Dashboard", panelID: "dashboard-panel" },
     { id: "orders", content: "Orders", panelID: "orders-panel" },
@@ -335,10 +369,6 @@ export default function InvoicePage() {
             />
           </div>
         )}
-
-
-
-
         {tabIndex === 2 && (
           <div>
             <p
@@ -498,12 +528,13 @@ export default function InvoicePage() {
         )}
         {tabIndex === 4 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            
             <Card title="INVOICE" sectioned>
-              <div style={{ display: "flex", gap: "24px", flexWrap: "nowrap" }}>
+              <div style={{ display: "flex", gap: "24px" }}>
                 <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <TextField label="Invoice No:" value="PF-LMKACMSPKS" onChange={() => { }} autoComplete="off" />
-                  <TextField label="Invoice Date:" type="date" value="2023-01-20" onChange={() => { }} />
-                  <TextField label="Due Date:" type="date" value="2023-01-20" onChange={() => { }} />
+                  <TextField label="Invoice No:" value={invoiceNo} onChange={setInvoiceNo} />
+                  <TextField label="Invoice Date:" type="date" value={invoiceDate} onChange={setInvoiceDate} />
+                  <TextField label="Due Date:" type="date" value={dueDate} onChange={setDueDate} />
                   <Select
                     label="Currency:"
                     options={[
@@ -511,60 +542,97 @@ export default function InvoicePage() {
                       { label: "EUR - Euro (€)", value: "eur" },
                       { label: "GBP - British Pound (£)", value: "gbp" },
                     ]}
-                    value="usd"
-                    onChange={() => { }}
+                    value={currency}
+                    onChange={setCurrency}
                   />
                 </div>
-                <div style={{ width: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", paddingTop: "8px" }}>
+                <div style={{ width: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px" }}>
                   <Button primary>📤 Choose your logo</Button>
-                  <p style={{ fontSize: "12px", color: "gray", margin: 0 }}>Recommended logo size is 50x50 (px)</p>
+                  <p style={{ fontSize: "12px", color: "gray", margin: 0 }}>Recommended size: 50x50px</p>
                 </div>
               </div>
             </Card>
+
             <Card sectioned>
-              <div style={{ display: "flex", gap: "24px", flexWrap: "nowrap" }}>
+              <div style={{ display: "flex", gap: "24px" }}>
                 <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <h2 style={{ marginBottom: "8px" }}>Billing From</h2>
-                  <TextField label="Your Name" placeholder="Enter your name" />
-                  <TextField label="E-mail Address" type="email" placeholder="Enter your email" />
-                  <TextField label="City" placeholder="Enter your city" />
-                  <Select
-                    label="Country"
-                    options={[
-                      { label: "United States", value: "us" },
-                      { label: "United Kingdom", value: "uk" },
-                      { label: "Germany", value: "de" },
-                    ]}
-                    value="us"
-                    onChange={() => { }}
-                  />
-                  <TextField label="Zip Code" placeholder="Enter zip code" />
+                  <h2>Billing From</h2>
+                  <TextField label="Your Name" value={fromName} onChange={setFromName} />
+                  <TextField label="E-mail Address" type="email" value={fromEmail} onChange={setFromEmail} />
+                  <TextField label="City" value={fromCity} onChange={setFromCity} />
+                  <TextField label="Zip Code" value={fromZip} onChange={setFromZip} />
                 </div>
                 <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <h2 style={{ marginBottom: "8px" }}>Billing To</h2>
-                  <TextField label="Customer's Name" placeholder="Enter customer's name" />
-                  <TextField label="E-mail Address" type="email" placeholder="Enter customer's email" />
-                  <TextField label="City" placeholder="Enter customer's city" />
-                  <Select
-                    label="Country"
-                    options={[
-                      { label: "United States", value: "us" },
-                      { label: "United Kingdom", value: "uk" },
-                      { label: "Germany", value: "de" },
-                    ]}
-                    value="us"
-                    onChange={() => { }}
-                  />
-                  <TextField label="Zip Code" placeholder="Enter zip code" />
+                  <h2>Billing To</h2>
+                  <TextField label="Customer's Name" value={toName} onChange={setToName} />
+                  <TextField label="E-mail Address" type="email" value={toEmail} onChange={setToEmail} />
+                  <TextField label="City" value={toCity} onChange={setToCity} />
+                  <TextField label="Zip Code" value={toZip} onChange={setToZip} />
                 </div>
               </div>
             </Card>
-            <InvoiceItems />
+
+            <InvoiceItems onItemsChange={setItems} />
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button primary onClick={() => setPreviewOpen(true)}>👁 Preview Invoice</Button>
+            </div>
           </div>
         )}
-
-
       </Card>
+
+      <Modal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        title="Invoice Preview"
+        large
+      >
+        <Modal.Section>
+          <h2>Invoice No: {invoiceNo}</h2>
+          <p><strong>Invoice Date:</strong> {invoiceDate}</p>
+          <p><strong>Due Date:</strong> {dueDate}</p>
+
+          <h3 style={{ marginTop: "16px" }}>Billing From</h3>
+          <p>{fromName} | {fromEmail}</p>
+          <p>{fromCity}, {fromZip}</p>
+
+          <h3 style={{ marginTop: "16px" }}>Billing To</h3>
+          <p>{toName} | {toEmail}</p>
+          <p>{toCity}, {toZip}</p>
+
+          <br />
+          <h3>Items</h3>
+          <DataTable
+            columnContentTypes={["text", "text", "numeric", "numeric", "numeric"]}
+            headings={["Item", "Description", "Qty", "Price", "Amount"]}
+            rows={items.map((it) => [
+              it.item,
+              it.description,
+              it.quantity,
+              `$${it.price.toFixed(2)}`,
+              `$${it.amount.toFixed(2)}`,
+            ])}
+          />
+          <br />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+            <p><b>Subtotal:</b> ${subtotal.toFixed(2)}</p>
+            <p><b>Tax (10%):</b> ${tax.toFixed(2)}</p>
+            <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+              <b>Total:</b> ${total.toFixed(2)}
+            </p>
+          </div>
+
+          <div style={{ marginTop: "16px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+            <Button onClick={() => window.print()}>🖨 Print</Button>
+            <Button destructive onClick={() => console.log("Download PDF clicked")}>
+              ⬇ Download PDF
+            </Button>
+            <Button>
+              Send Email
+            </Button>
+          </div>
+        </Modal.Section>
+      </Modal>
     </Page >
   );
 }
