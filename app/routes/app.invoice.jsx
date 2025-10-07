@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   Page,
   Layout,
@@ -12,7 +13,6 @@ import {
   TextField,
   Modal,
 } from "@shopify/polaris";
-
 import {
   BarChart,
   Bar,
@@ -54,6 +54,7 @@ const storeData = {
   phone: "+1 555-123-4567",
   email: "support@mystore.com"
 };
+
 
 const orderData = {
   customer: "John Doe",
@@ -141,7 +142,11 @@ const templates = [
   }
 ];
 function InvoiceItems({ onItemsChange }) {
-  const [items, setItems] = useState([]); 
+  const [items, setItems] = useState([]);
+  const [photo, setPhotos] = useState([]);
+  const uploadPhoto = () => {
+
+  }
 
   const handleChange = (index, field, value) => {
     const newItems = [...items];
@@ -238,8 +243,9 @@ export default function InvoicePage() {
   const [tabIndex, setTabIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [items, setItems] = useState([]);
+  const [logo, setLogo] = useState(null)
 
-  
+
   const [invoiceNo, setInvoiceNo] = useState("PF-LMKACMSPKS");
   const [invoiceDate, setInvoiceDate] = useState("2023-01-20");
   const [dueDate, setDueDate] = useState("2023-01-20");
@@ -256,7 +262,6 @@ export default function InvoicePage() {
   const [toEmail, setToEmail] = useState("");
   const [toCity, setToCity] = useState("");
   const [toZip, setToZip] = useState("");
-
   const subtotal = items.reduce((acc, item) => acc + item.amount, 0);
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
@@ -267,6 +272,96 @@ export default function InvoicePage() {
     { id: "reports", content: "Reports", panelID: "reports-panel" },
     { id: "invoice", content: "Invoice", panelID: "invoice-panel" }
   ];
+  const getBlocks = () => [
+    {
+      id: "invoiceInfo",
+      content: (
+        <>
+          <h2>Invoice No: {invoiceNo}</h2>
+          <p><b>Invoice Date:</b> {invoiceDate}</p>
+          <p><b>Due Date:</b> {dueDate}</p>
+        </>
+      )
+    },
+    {
+      id: "from",
+      content: (
+        <>
+          <h3>Billing From</h3>
+          <p>{fromName} | {fromEmail}</p>
+          <p>{fromCity}, {fromZip}</p>
+        </>
+      )
+    },
+    {
+      id: "to",
+      content: (
+        <>
+          <h3>Billing To</h3>
+          <p>{toName} | {toEmail}</p>
+          <p>{toCity}, {toZip}</p>
+        </>
+      )
+    },
+    {
+      id: "items",
+      content: (
+        <>
+          <h3>Items</h3>
+          <DataTable
+            columnContentTypes={["text", "text", "numeric", "numeric", "numeric"]}
+            headings={["Item", "Description", "Qty", "Price", "Amount"]}
+            rows={items.map(it => [
+              it.item, it.description, it.quantity,
+              `$${it.price.toFixed(2)}`, `$${it.amount.toFixed(2)}`
+            ])}
+          />
+        </>
+      )
+    },
+    {
+      id: "totals",
+      content: (
+        <>
+          <p><b>Subtotal:</b> ${subtotal.toFixed(2)}</p>
+          <p><b>Tax (10%):</b> ${tax.toFixed(2)}</p>
+          <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+            <b>Total:</b> ${total.toFixed(2)}
+          </p>
+        </>
+      )
+    }
+  ];
+
+  const [order, setOrder] = useState(["invoiceInfo", "from", "to", "items", "totals"]);
+
+  const blocks = getBlocks();
+  const orderedBlocks = order.map(id => blocks.find(b => b.id === id));
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const newOrder = Array.from(order);
+    const [removed] = newOrder.splice(result.source.index, 1);
+    newOrder.splice(result.destination.index, 0, removed);
+    setOrder(newOrder);
+  };
+
+
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result); // save base64 image
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+
+
 
   return (
     <Page title="Shopify Invoicify">
@@ -452,7 +547,21 @@ export default function InvoicePage() {
                   >
                     Logo
                   </div>
-                  <Button>Upload Logo</Button>
+
+                  <div style={{ width: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px" }}>
+                    {logo ? (
+                      <img src={logo} alt="Logo" style={{ width: "80px", height: "80px", objectFit: "contain" }} />
+                    ) : (
+                      <div style={{ width: "80px", height: "80px", border: "1px solid #ddd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        No Logo
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" id="logo-upload" style={{ display: "none" }} onChange={handleLogoUpload} />
+                    <Button primary onClick={() => document.getElementById("logo-upload").click()}>
+                      📤 Choose your logo
+                    </Button>
+                  </div>
+
                 </div>
                 <p style={{ marginTop: "8px", fontSize: "13px", color: "#6b7280" }}>
                   Recommended size: 200x200px (PNG or JPG)
@@ -528,7 +637,7 @@ export default function InvoicePage() {
         )}
         {tabIndex === 4 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            
+
             <Card title="INVOICE" sectioned>
               <div style={{ display: "flex", gap: "24px" }}>
                 <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -580,7 +689,6 @@ export default function InvoicePage() {
           </div>
         )}
       </Card>
-
       <Modal
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
@@ -588,51 +696,47 @@ export default function InvoicePage() {
         large
       >
         <Modal.Section>
-          <h2>Invoice No: {invoiceNo}</h2>
-          <p><strong>Invoice Date:</strong> {invoiceDate}</p>
-          <p><strong>Due Date:</strong> {dueDate}</p>
-
-          <h3 style={{ marginTop: "16px" }}>Billing From</h3>
-          <p>{fromName} | {fromEmail}</p>
-          <p>{fromCity}, {fromZip}</p>
-
-          <h3 style={{ marginTop: "16px" }}>Billing To</h3>
-          <p>{toName} | {toEmail}</p>
-          <p>{toCity}, {toZip}</p>
-
-          <br />
-          <h3>Items</h3>
-          <DataTable
-            columnContentTypes={["text", "text", "numeric", "numeric", "numeric"]}
-            headings={["Item", "Description", "Qty", "Price", "Amount"]}
-            rows={items.map((it) => [
-              it.item,
-              it.description,
-              it.quantity,
-              `$${it.price.toFixed(2)}`,
-              `$${it.amount.toFixed(2)}`,
-            ])}
-          />
-          <br />
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-            <p><b>Subtotal:</b> ${subtotal.toFixed(2)}</p>
-            <p><b>Tax (10%):</b> ${tax.toFixed(2)}</p>
-            <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-              <b>Total:</b> ${total.toFixed(2)}
-            </p>
-          </div>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="invoice-preview">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {orderedBlocks.map((block, index) => (
+                    <Draggable key={block.id} draggableId={block.id} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={{
+                            background: "#fff",
+                            padding: "12px",
+                            marginBottom: "12px",
+                            border: "1px dashed #ccc",
+                            borderRadius: "8px",
+                            ...provided.draggableProps.style
+                          }}
+                        >
+                          {block.content}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
 
           <div style={{ marginTop: "16px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
             <Button onClick={() => window.print()}>🖨 Print</Button>
             <Button destructive onClick={() => console.log("Download PDF clicked")}>
               ⬇ Download PDF
             </Button>
-            <Button>
-              Send Email
-            </Button>
+            <Button>Send Email</Button>
           </div>
         </Modal.Section>
       </Modal>
+
     </Page >
   );
 }
