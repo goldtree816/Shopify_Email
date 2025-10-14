@@ -64,89 +64,8 @@ const orderData = {
   ],
   total: "$70"
 };
-const generateTemplateHtml = (templateId) => {
-  if (templateId === "classic") {
-    return `
-      <div class="invoice-classic">
-        <h1>${storeData.name}</h1>
-        <p>${storeData.address}, ZIP: ${storeData.zip}</p>
-        <p>Tel: ${storeData.phone} | Email: ${storeData.email}</p>
-        
-        <h2>Invoice</h2>
-        <p><b>Customer:</b> ${orderData.customer}</p>
-        <table>
-          <tr><th>Item</th><th>Price</th></tr>
-          ${orderData.items
-        .map((item) => `<tr><td>${item.name}</td><td>${item.price}</td></tr>`)
-        .join("")}
-        </table>
-        <p><b>Total: ${orderData.total}</b></p>
-      </div>
-    `;
-  }
-
-  if (templateId === "modern") {
-    return `
-      <div class="invoice-modern">
-        <h2 style="color:#4CAF50;">${storeData.name}</h2>
-        <p>${storeData.address}, ZIP: ${storeData.zip}</p>
-        <p>Tel: ${storeData.phone} | Email: ${storeData.email}</p>
-
-        <h3>Invoice</h3>
-        <p><b>Customer:</b> ${orderData.customer}</p>
-        <ul>
-          ${orderData.items
-        .map((item) => `<li>${item.name} - ${item.price}</li>`)
-        .join("")}
-        </ul>
-        <h3>Total: ${orderData.total}</h3>
-      </div>
-    `;
-  }
-
-  return "";
-};
-
-const templates = [
-  {
-    id: "classic",
-    name: "Classic Invoice",
-    css: `
-      .invoice-classic {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-      }
-      .invoice-classic table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .invoice-classic table, th, td {
-        border: 1px solid black;
-      }
-    `
-  },
-  {
-    id: "modern",
-    name: "Modern Invoice",
-    css: `
-      .invoice-modern {
-        font-family: 'Helvetica Neue', sans-serif;
-        padding: 30px;
-        background: #f9f9f9;
-        border-radius: 8px;
-      }
-      .invoice-modern h2 {
-        margin-bottom: 10px;
-      }
-    `
-  }
-];
 function InvoiceItems({ onItemsChange }) {
   const [items, setItems] = useState([]);
-  const [photo, setPhotos] = useState([]);
-  const uploadPhoto = () => {
-
-  }
 
   const handleChange = (index, field, value) => {
     const newItems = [...items];
@@ -163,8 +82,7 @@ function InvoiceItems({ onItemsChange }) {
       { item: "", description: "", quantity: 1, price: 0, amount: 0 },
     ]);
 
-  const removeRow = (index) =>
-    setItems(items.filter((_, i) => i !== index));
+  const removeRow = (index) => setItems(items.filter((_, i) => i !== index));
 
   return (
     <Card title="Invoice Items" sectioned>
@@ -186,9 +104,7 @@ function InvoiceItems({ onItemsChange }) {
                 <input
                   type="text"
                   value={item.item}
-                  onChange={(e) =>
-                    handleChange(index, "item", e.target.value)
-                  }
+                  onChange={(e) => handleChange(index, "item", e.target.value)}
                 />
               </td>
               <td>
@@ -214,9 +130,7 @@ function InvoiceItems({ onItemsChange }) {
                   type="number"
                   value={item.price}
                   step="0.01"
-                  onChange={(e) =>
-                    handleChange(index, "price", e.target.value)
-                  }
+                  onChange={(e) => handleChange(index, "price", e.target.value)}
                 />
               </td>
               <td>${item.amount.toFixed(2)}</td>
@@ -238,117 +152,116 @@ function InvoiceItems({ onItemsChange }) {
 }
 
 
+
 export default function InvoicePage() {
 
   const [tabIndex, setTabIndex] = useState(0);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [items, setItems] = useState([]);
-  const [logo, setLogo] = useState(null)
-
-
-  const [invoiceNo, setInvoiceNo] = useState("PF-LMKACMSPKS");
-  const [invoiceDate, setInvoiceDate] = useState("2023-01-20");
-  const [dueDate, setDueDate] = useState("2023-01-20");
-  const [currency, setCurrency] = useState("usd");
-
-
-  const [fromName, setFromName] = useState("");
-  const [fromEmail, setFromEmail] = useState("");
-  const [fromCity, setFromCity] = useState("");
-  const [fromZip, setFromZip] = useState("");
-
-
-  const [toName, setToName] = useState("");
-  const [toEmail, setToEmail] = useState("");
-  const [toCity, setToCity] = useState("");
-  const [toZip, setToZip] = useState("");
-  const subtotal = items.reduce((acc, item) => acc + item.amount, 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
   const tabs = [
-    { id: "dashboard", content: "Dashboard", panelID: "dashboard-panel" },
-    { id: "orders", content: "Orders", panelID: "orders-panel" },
-    { id: "settings", content: "Settings", panelID: "settings-panel" },
-    { id: "reports", content: "Reports", panelID: "reports-panel" },
-    { id: "invoice", content: "Invoice", panelID: "invoice-panel" }
-  ];
-  const getBlocks = () => [
-    {
-      id: "invoiceInfo",
-      content: (
-        <>
-          <h2>Invoice No: {invoiceNo}</h2>
-          <p><b>Invoice Date:</b> {invoiceDate}</p>
-          <p><b>Due Date:</b> {dueDate}</p>
-        </>
-      )
-    },
-    {
-      id: "from",
-      content: (
-        <>
-          <h3>Billing From</h3>
-          <p>{fromName} | {fromEmail}</p>
-          <p>{fromCity}, {fromZip}</p>
-        </>
-      )
-    },
-    {
-      id: "to",
-      content: (
-        <>
-          <h3>Billing To</h3>
-          <p>{toName} | {toEmail}</p>
-          <p>{toCity}, {toZip}</p>
-        </>
-      )
-    },
-    {
-      id: "items",
-      content: (
-        <>
-          <h3>Items</h3>
-          <DataTable
-            columnContentTypes={["text", "text", "numeric", "numeric", "numeric"]}
-            headings={["Item", "Description", "Qty", "Price", "Amount"]}
-            rows={items.map(it => [
-              it.item, it.description, it.quantity,
-              `$${it.price.toFixed(2)}`, `$${it.amount.toFixed(2)}`
-            ])}
-          />
-        </>
-      )
-    },
-    {
-      id: "totals",
-      content: (
-        <>
-          <p><b>Subtotal:</b> ${subtotal.toFixed(2)}</p>
-          <p><b>Tax (10%):</b> ${tax.toFixed(2)}</p>
-          <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-            <b>Total:</b> ${total.toFixed(2)}
-          </p>
-        </>
-      )
-    }
+    { id: 'dashboard', content: 'Dashboard' },
+    { id: 'orders', content: 'Orders' },
+    { id: 'store', content: 'Store' },
+    { id: 'reports', content: 'Reports' },
+    { id: 'invoice', content: 'Invoice' },
   ];
 
-  const [order, setOrder] = useState(["invoiceInfo", "from", "to", "items", "totals"]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  const blocks = getBlocks();
-  const orderedBlocks = order.map(id => blocks.find(b => b.id === id));
+  // Invoice data
+  const [invoiceNo, setInvoiceNo] = useState("INV-1001");
+  const [invoiceDate, setInvoiceDate] = useState("2025-10-08");
+  const [dueDate, setDueDate] = useState("2025-10-15");
+  const [currency] = useState("usd");
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
+  const [companyName, setCompanyName] = useState("My Company");
+  const [fromEmail, setFromEmail] = useState("info@company.com");
 
-    const newOrder = Array.from(order);
-    const [removed] = newOrder.splice(result.source.index, 1);
-    newOrder.splice(result.destination.index, 0, removed);
-    setOrder(newOrder);
-  };
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerZip, setCustomerZip] = useState("");
+
+  // Items, tax, discount
+  const [items, setItems] = useState([]);
+  const [discount, setDiscount] = useState(0);
+  const [taxRate, setTaxRate] = useState(10);
+
+  // Logo + style
+  const [logo, setLogo] = useState(null);
+  const [headingColor, setHeadingColor] = useState("#000000");
+  const [companyColor, setCompanyColor] = useState("#1a73e8");
+  const [textColor, setTextColor] = useState("#333333");
+  const [bgColor, setBgColor] = useState("#ffffff");
+  const [logoPosition, setLogoPosition] = useState("left");
+  const [companyPosition, setCompanyPosition] = useState("left");
 
 
+  // Calculations
+  const subtotal = items.reduce((acc, item) => acc + item.amount, 0);
+  const discountAmount = subtotal * (discount / 100);
+  const taxedSubtotal = subtotal - discountAmount;
+  const tax = taxedSubtotal * (taxRate / 100);
+  const total = taxedSubtotal + tax;
 
+  // Generate Invoice HTML for preview & print
+  const generateInvoiceHtml = () => `
+    <div style="padding:20px; background:${bgColor}; color:${textColor}; font-family:Arial, sans-serif;">
+      <div style="text-align:${logoPosition};">
+        ${logo ? `<img src="${logo}" style="max-height:80px; max-width:150px;"/>` : ""}
+      </div>
+
+      <h1 style="color:${companyColor}; text-align:${companyPosition};">${companyName}</h1>
+      <p>${fromEmail}</p>
+
+      <h2 style="color:${headingColor}; border-bottom:1px solid ${headingColor};">Invoice</h2>
+      <p><b>No:</b> ${invoiceNo}</p>
+      <p><b>Date:</b> ${invoiceDate}</p>
+      <p><b>Due:</b> ${dueDate}</p>
+
+      <div style="margin-top:20px;">
+  <h3 style="border-bottom:1px solid ${headingColor}; padding-bottom:4px;">Bill To:</h3>
+  <p><b>${customerName}</b></p>
+  <p>${customerAddress}</p>
+  <p>${customerZip}</p>
+  <p>Email: ${customerEmail}</p>
+  <p>Phone: ${customerPhone}</p>
+</div>
+
+
+      <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+        <thead style="background:#3b82f6; color:${headingColor};">
+          <tr>
+            <th style="padding:8px; text-align:left;">Item</th>
+            <th style="padding:8px; text-align:left;">Description</th>
+            <th style="padding:8px; text-align:right;">Qty</th>
+            <th style="padding:8px; text-align:right;">Price</th>
+            <th style="padding:8px; text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+      .map(
+        (item) => `
+              <tr>
+                <td style="padding:8px;">${item.item}</td>
+                <td style="padding:8px;">${item.description}</td>
+                <td style="padding:8px; text-align:right;">${item.quantity}</td>
+                <td style="padding:8px; text-align:right;">$${item.price.toFixed(2)}</td>
+                <td style="padding:8px; text-align:right;">$${item.amount.toFixed(2)}</td>
+              </tr>`
+      )
+      .join("")}
+        </tbody>
+      </table>
+
+      <div style="margin-top:20px; text-align:right;">
+        <p><b>Subtotal:</b> $${subtotal.toFixed(2)}</p>
+        <p><b>Discount (${discount}%):</b> -$${discountAmount.toFixed(2)}</p>
+        <p><b>Tax (${taxRate}%):</b> $${tax.toFixed(2)}</p>
+        <h3><b>Total:</b> $${total.toFixed(2)}</h3>
+      </div>
+    </div>
+  `;
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -359,10 +272,6 @@ export default function InvoicePage() {
       reader.readAsDataURL(file);
     }
   };
-
-
-
-
   return (
     <Page title="Shopify Invoicify">
       <Tabs tabs={tabs} selected={tabIndex} onSelect={setTabIndex} fitted />
@@ -637,98 +546,120 @@ export default function InvoicePage() {
         )}
         {tabIndex === 4 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-
-            <Card title="INVOICE" sectioned>
-              <div style={{ display: "flex", gap: "24px" }}>
-                <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <TextField label="Invoice No:" value={invoiceNo} onChange={setInvoiceNo} />
-                  <TextField label="Invoice Date:" type="date" value={invoiceDate} onChange={setInvoiceDate} />
-                  <TextField label="Due Date:" type="date" value={dueDate} onChange={setDueDate} />
-                  <Select
-                    label="Currency:"
-                    options={[
-                      { label: "USD - US Dollar ($)", value: "usd" },
-                      { label: "EUR - Euro (€)", value: "eur" },
-                      { label: "GBP - British Pound (£)", value: "gbp" },
-                    ]}
-                    value={currency}
-                    onChange={setCurrency}
+            <Card title="Company Details" sectioned>
+              <TextField
+                label="Company Name"
+                value={companyName}
+                onChange={setCompanyName}
+              />
+              <TextField label="Email" value={fromEmail} onChange={setFromEmail} />
+              <div style={{ marginTop: "16px" }}>
+                {logo ? (
+                  <img
+                    src={logo}
+                    alt="logo"
+                    style={{ height: "60px", marginBottom: "10px" }}
                   />
-                </div>
-                <div style={{ width: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px" }}>
-                  <Button primary>📤 Choose your logo</Button>
-                  <p style={{ fontSize: "12px", color: "gray", margin: 0 }}>Recommended size: 50x50px</p>
-                </div>
+                ) : (
+                  <p>No logo uploaded</p>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="logo-upload"
+                  style={{ display: "none" }}
+                  onChange={handleLogoUpload}
+                />
+                <Button onClick={() => document.getElementById("logo-upload").click()}>
+                  Upload Logo
+                </Button>
               </div>
             </Card>
-
-            <Card sectioned>
-              <div style={{ display: "flex", gap: "24px" }}>
-                <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <h2>Billing From</h2>
-                  <TextField label="Your Name" value={fromName} onChange={setFromName} />
-                  <TextField label="E-mail Address" type="email" value={fromEmail} onChange={setFromEmail} />
-                  <TextField label="City" value={fromCity} onChange={setFromCity} />
-                  <TextField label="Zip Code" value={fromZip} onChange={setFromZip} />
-                </div>
-                <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <h2>Billing To</h2>
-                  <TextField label="Customer's Name" value={toName} onChange={setToName} />
-                  <TextField label="E-mail Address" type="email" value={toEmail} onChange={setToEmail} />
-                  <TextField label="City" value={toCity} onChange={setToCity} />
-                  <TextField label="Zip Code" value={toZip} onChange={setToZip} />
-                </div>
-              </div>
+            {/* Customer Info */}
+            <Card title="Customer Details" sectioned>
+              <TextField label="Customer Name" value={customerName} onChange={setCustomerName} />
+              <TextField label="Email" type="email" value={customerEmail} onChange={setCustomerEmail} />
+              <TextField label="Phone" type="tel" value={customerPhone} onChange={setCustomerPhone} />
+              <TextField label="Address" multiline value={customerAddress} onChange={setCustomerAddress} />
+              <TextField label="ZIP / Postal Code" value={customerZip} onChange={setCustomerZip} />
             </Card>
 
+
+            {/* Invoice Info */}
+            <Card title="Invoice Info" sectioned>
+              <TextField label="Invoice No" value={invoiceNo} onChange={setInvoiceNo} />
+              <TextField label="Invoice Date" type="date" value={invoiceDate} onChange={setInvoiceDate} />
+              <TextField label="Due Date" type="date" value={dueDate} onChange={setDueDate} />
+            </Card>
+
+            {/* Adjustments */}
+            <Card title="Adjustments" sectioned>
+              <TextField
+                label="Discount (%)"
+                type="number"
+                value={discount.toString()}
+                onChange={(val) => setDiscount(Number(val))}
+              />
+              <TextField
+                label="Tax Rate (%)"
+                type="number"
+                value={taxRate.toString()}
+                onChange={(val) => setTaxRate(Number(val))}
+              />
+            </Card>
+
+            {/* Items */}
             <InvoiceItems onItemsChange={setItems} />
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            {/* Style Customization */}
+            <Card title="Style Customization" sectioned>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <label>Heading Color</label>
+                <input type="color" value={headingColor} onChange={(e) => setHeadingColor(e.target.value)} />
+
+                <label>Company Title Color</label>
+                <input type="color" value={companyColor} onChange={(e) => setCompanyColor(e.target.value)} />
+
+                <label>Text Color</label>
+                <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
+
+                <label>Background Color</label>
+                <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+
+                <label>Logo Position</label>
+                <select value={logoPosition} onChange={(e) => setLogoPosition(e.target.value)}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+
+                <label>Company Title Alignment</label>
+                <select value={companyPosition} onChange={(e) => setCompanyPosition(e.target.value)}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </Card>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
               <Button primary onClick={() => setPreviewOpen(true)}>👁 Preview Invoice</Button>
             </div>
           </div>
         )}
       </Card>
-      <Modal
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        title="Invoice Preview"
-        large
-      >
+      <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Invoice Preview" large>
         <Modal.Section>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="invoice-preview">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {orderedBlocks.map((block, index) => (
-                    <Draggable key={block.id} draggableId={block.id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          style={{
-                            background: "#fff",
-                            padding: "12px",
-                            marginBottom: "12px",
-                            border: "1px dashed #ccc",
-                            borderRadius: "8px",
-                            ...provided.draggableProps.style
-                          }}
-                        >
-                          {block.content}
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <div dangerouslySetInnerHTML={{ __html: generateInvoiceHtml() }} />
 
           <div style={{ marginTop: "16px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-            <Button onClick={() => window.print()}>🖨 Print</Button>
+            <Button onClick={() => {
+              const printWindow = window.open("", "PRINT", "height=650,width=900,top=100,left=100");
+              printWindow.document.write(generateInvoiceHtml());
+              printWindow.document.close();
+              printWindow.focus();
+              printWindow.print();
+            }}>🖨 Print</Button>
+
             <Button destructive onClick={() => console.log("Download PDF clicked")}>
               ⬇ Download PDF
             </Button>
@@ -736,7 +667,6 @@ export default function InvoicePage() {
           </div>
         </Modal.Section>
       </Modal>
-
     </Page >
   );
 }
